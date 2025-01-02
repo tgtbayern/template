@@ -1,1 +1,5 @@
-spring.application.name=my-project-backend
+spring:
+  security:
+    jwt:
+      key: abcdefg #注意要有空格
+      expire: 7 #7天jwt过期

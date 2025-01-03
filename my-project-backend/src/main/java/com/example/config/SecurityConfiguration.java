@@ -1,8 +1,10 @@
 package com.example.config;
 
 import com.example.entity.RestBean;
+import com.example.entity.dto.Account;
 import com.example.entity.vo.response.AuthorizeVO;
 import com.example.filter.JwtAuthorizeFilter;
+import com.example.service.AccountService;
 import com.example.utils.JwtUtils;
 import jakarta.annotation.Resource;
 import jakarta.servlet.ServletException;
@@ -45,6 +47,9 @@ public class SecurityConfiguration {
 
     @Resource
     JwtAuthorizeFilter jwtAuthorizeFilter;
+
+    @Resource
+    AccountService service;
     /**
      * 配置安全过滤器链，定义应用程序的安全规则和处理逻辑。
      * 使用 HttpSecurity 进行链式调用，逐步配置授权、登录和登出逻辑。
@@ -99,6 +104,7 @@ public class SecurityConfiguration {
                         .accessDeniedHandler(this::onAccessDeny))
                 // 禁用 CSRF 保护（开发阶段或API服务常禁用）
                 .csrf(AbstractHttpConfigurer::disable)
+                // 表示应用程序不会创建或使用 HTTP 会话，每次请求都必须携带认证信息（如 JWT）
                 .sessionManagement(conf -> conf.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // UsernamePasswordAuthenticationFilter专门处理基于表单登录的用户名和密码认证请求
                 // 当用户提交用户名和密码登录时，UsernamePasswordAuthenticationFilter 会拦截请求并执行自定义的认证逻辑
@@ -180,17 +186,20 @@ public class SecurityConfiguration {
          */
         User user = (User) authentication.getPrincipal();
 
+        //这里的username是loadUserByUsername方法存储的username
+        Account account = service.findAccountByNameOrEmail(user.getUsername());
+
         /*keypoint
            通过调用我们自己写的方法，生成登录成功后的token
            然后将生成的token 和 其他信息一起封装在vo中，返回给前端
          */
-        String token = utils.createJwt(user, 1, "李雨佳");
+        String token = utils.createJwt(user, account.getId(), account.getUsername());
         AuthorizeVO vo=new AuthorizeVO();
 
-        vo.setRole("");
+        vo.setRole(account.getRole());
         vo.setExpire(utils.expireTime());
         vo.setToken(token);
-        vo.setUsername("李雨佳");
+        vo.setUsername(account.getUsername());
         response.setContentType("application/json;charset=utf-8");
 
         /*keypoint  restBean是我们自己写的一个实体类，当登录成功后，会把需要返回的消息封装到这个类中，返回给前端

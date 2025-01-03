@@ -7,11 +7,15 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -27,6 +31,8 @@ import java.io.IOException;
  * 6 将UsernamePasswordAuthenticationToken放到SecurityContextHolder中，这个动作就表明这个token（或者说这个用户）验证通过
  * 7 回到总的过滤器链，进行后续的验证
  */
+//@Component 是 Spring 框架中最基础的注解之一，用于将一个类声明为 Spring 管理的组件（Bean）。
+//@Service、@Controller、@Repository 等注解功能相同，但语义不明确，适用于通用类。
 @Component
 public class JwtAuthorizeFilter extends OncePerRequestFilter {
 

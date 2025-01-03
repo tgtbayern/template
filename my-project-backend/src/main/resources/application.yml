@@ -3,3 +3,8 @@ spring:
     jwt:
       key: abcdefg #注意要有空格
       expire: 7 #7天jwt过期
+  datasource:
+    url: jdbc:mysql://localhost:3306/first_project
+    username: root
+    password: 20020809
+    driver-class-name: com.mysql.cj.jdbc.Driver

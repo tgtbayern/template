@@ -30,7 +30,13 @@ const router = createRouter({
             component: () => import('@/views/WelcomeView.vue'),
 
             // 子路由：当前为空数组，表示没有子路由
-            children: []
+            children: [
+                {
+                    path: '',
+                    name: 'welcome-login',
+                    component: ()  => import('@/views/welcome/LoginPage.vue')
+                }
+            ]
         }
     ]
 });

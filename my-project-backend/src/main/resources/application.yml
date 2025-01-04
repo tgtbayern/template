@@ -1,4 +1,26 @@
 spring:
+  mail:
+    host: smtp.qq.com
+    username: 1321302691@qq.com
+    password: iyxuhjgomfayhghe
+    port: 587
+    default-encoding: UTF-8
+  rabbitmq:
+    addresses: localhost
+    username: admin
+    password: admin
+    #    在RabbitMQ中，**虚拟主机（Virtual Host，vhost）**是一个逻辑隔离的消息路由环境，类似于独立的“命名空间”。它允许你在一个RabbitMQ实例中创建多个独立的环境，每个环境有自己的一套交换机、队列和绑定关系。
+    #
+    #    1. 虚拟主机的作用
+    #    隔离不同应用或环境：多个项目或服务可以使用同一个RabbitMQ实例，但通过不同的虚拟主机进行逻辑隔离，互不影响。
+    #    权限控制：可以为不同用户分配访问特定虚拟主机的权限。
+    #    资源管理：每个虚拟主机都可以单独配置策略和限制，方便资源管理。
+    #    2. /虚拟主机
+    #    /是RabbitMQ默认创建的虚拟主机，开箱即用。
+    #    如果不主动指定虚拟主机，RabbitMQ会自动使用/作为默认的虚拟主机。
+    #    默认情况下，所有交换机、队列等都会创建在/这个虚拟主机下。
+    virtual-host: /
+
   security:
     jwt:
       key: abcdefg #注意要有空格

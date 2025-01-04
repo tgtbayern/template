@@ -5,6 +5,7 @@ import { User, Lock } from '@element-plus/icons-vue'
 import { reactive } from "vue";
 import { ref } from 'vue' // 引入 ref
 import {login} from "@/net/index.js";
+import router from "@/router/index.js";
 
 // 创建一个响应式表单对象 form，包含用户名、密码和记住我三个字段
 const form = reactive({
@@ -17,25 +18,29 @@ const formRef = ref()
 // 定义表单验证规则
 const rule = {
   username: [
-    // 验证用户名为必填项，如果为空则提示“请输入用户名”
+    // 验证用户名为必填项，如果为空则提示“请输入用户名”，如果没有填，message中的内容会以红色小字的形式显示在输入框的下面
     { required: true, message: '请输入用户名' }
   ],
   password: [
-    // 验证密码为必填项，如果为空则提示“请输入密码”
+    // 验证密码为必填项，如果为空则提示“请输入密码”，如果没有填，message中的内容会以红色小字的形式显示在输入框的下面
     { required: true, message: '请输入密码' }
   ]
 };
 
 // 用户登录方法
 function userLogin() {
-  // 调用 formRef 的 validate 方法进行表单校验
+  // 调用 formRef 的 validate 方法进行表单校验，这里的validate方法验证的是表单的格式和完整性，而不代表用户名和密码正确。
+  //验证逻辑通常包括：是否输入了用户名和密码（必填项校验）。密码长度是否符合要求。用户名格式是否正确（例如邮箱格式校验）。其他表单规则，如手机号格式、验证码等。
+
   formRef.value.validate((valid) => {
     // 如果表单验证通过 (valid 为 true)
     if (valid) {
+      console.log("表单验证通过");
       // 调用 login 方法(这个方法位于net/index.js里，被import导入)，传入表单的用户名、密码和记住登录的状态
       // success 是一个回调函数，表示登录成功后的逻辑
       login(form.username, form.password, form.remember,  () => {
         // 此处可以添加登录成功后的操作，比如跳转页面或弹出提示
+        router.push('/index')
       });
     }
   });
@@ -61,7 +66,7 @@ function userLogin() {
         <!-- 用户名/邮箱输入框 -->
         <el-form-item prop="username"> <!-- 表单项容器 -->
           <el-input v-model="form.username" maxlength="30" type="text" placeholder="用户名/邮箱">
-            <!-- 输入框绑定到 form.username，最大长度 30 字符，类型为文本框，显示占位符 -->
+            <!-- keypoint 输入框绑定到 form.username，最大长度 30 字符，类型为文本框，显示占位符 -->
             <template #prefix> <!-- 自定义前缀插槽，添加用户图标 -->
               <el-icon><User/></el-icon> <!-- 用户名输入框前的用户图标 -->
             </template>
@@ -71,7 +76,7 @@ function userLogin() {
         <!-- 密码输入框 -->
         <el-form-item prop="password"> <!-- 表单项容器 -->
           <el-input v-model="form.password" maxlength="20" type="password" placeholder="密码">
-            <!-- 输入框绑定到 form.password，最大长度 20 字符，显示“密码”占位符 -->
+            <!-- keypoint 输入框绑定到 form.password，最大长度 20 字符，显示“密码”占位符 -->
             <template #prefix> <!-- 自定义前缀插槽，添加锁头图标 -->
               <el-icon><Lock /></el-icon> <!-- 密码输入框前的锁图标 -->
             </template>
@@ -97,6 +102,7 @@ function userLogin() {
     </div>
     <div style="margin-top: 40px">
       <!-- 登录按钮，宽度设置为270px，按钮类型为主要(primary)，表示蓝色按钮 -->
+      <!-- @click表明点击之后，执行 userLogin 函数    -->
       <el-button @click="userLogin" style="width: 270px" type="primary" >立即登录</el-button>
     </div>
 

@@ -11,4 +11,3 @@ public class AuthorizeVO {
     String token;
     Date expire;
 }
-

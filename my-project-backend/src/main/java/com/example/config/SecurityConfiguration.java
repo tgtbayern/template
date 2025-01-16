@@ -204,7 +204,7 @@ public class SecurityConfiguration {
 
         /*keypoint  restBean是我们自己写的一个实体类，当登录成功后，会把需要返回的消息封装到这个类中，返回给前端
                     当我们成功登录后，我们将生成的vo放入restBean类的success方法
-                    success方法会将这个参数————vo，向restBean实体类的data字段注入
+                    success方法会将这个参数————vo，向restBean实体类的data字段注入的
          */
         response.getWriter().write(RestBean.success(vo).asJsonString());
         System.out.println("Request URL: " + request.getRequestURI()+" in onAuthenticationSuccess");

@@ -1,10 +1,18 @@
 spring:
+  amqp:
+    deserialization:
+      trust:
+        all: true
   mail:
     host: smtp.qq.com
     username: 1321302691@qq.com
     password: iyxuhjgomfayhghe
-    port: 587
+    port: 587 # 端口 587 是用来进行 STARTTLS 加密的
     default-encoding: UTF-8
+    properties:
+      # 启用 STARTTLS 如果不启用 mail.smtp.starttls.enable=true，则连接不会加密，服务器可能会拒绝或返回错误，因为它期望使用加密连接。
+      mail.smtp.starttls.enable: true
+
   rabbitmq:
     addresses: localhost
     username: admin

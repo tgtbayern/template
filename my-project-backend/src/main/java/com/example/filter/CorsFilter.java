@@ -13,11 +13,12 @@ import java.io.IOException;
 
 // 标记该类为Spring组件，使其可以被自动扫描和注册
 @Component
-// 指定过滤器的执行顺序，ORDER_CORS常量（在const类中自定义的）控制执行的优先级
+// 指定过滤器的执行顺序，用ORDER_CORS常量（在const类中自定义的）控制执行的优先级
 @Order(Const.ORDER_CORS)
 public class CorsFilter extends HttpFilter {  // 继承HttpFilter，表示该类是一个HTTP过滤器
 
     // 重写HttpFilter的doFilter方法，处理每个HTTP请求
+    //浏览器或客户端发起HTTP请求，Spring的过滤器链会捕获这个请求。
     @Override
     protected void doFilter(HttpServletRequest request,
                             HttpServletResponse response,

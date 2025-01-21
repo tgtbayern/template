@@ -1,7 +1,10 @@
 package com.example.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.entity.dto.Account;
+import com.example.entity.vo.request.EmailRegisterVO;
 import com.example.mapper.AccountMapper;
 import com.example.service.AccountService;
 import com.example.utils.Const;
@@ -12,8 +15,10 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -25,6 +30,8 @@ import java.util.concurrent.TimeUnit;
 public class AccountServiceImpl
         // 继承 ServiceImpl，使用 MyBatis-Plus 提供的基础增删改查功能
         // ServiceImpl<M extends BaseMapper<T>, T>    M —— 你的 Mapper 接口，通常继承自 BaseMapper    T —— 你的 实体类，对应数据库中的表。
+        // 这里的继承说明了当我们在这个类中调用mybatis plus的baseMapper的时候,会自动调用AccountMapper,返回的结果会自动包装为Account类
+        // 在mybatis plus中,任何mapper都继承自baseMapper(所以如果我们进入到AccountMapper,会发现extend baseMapper),而这个baseMapper是一切真正的数据库查询语句的实现类
         extends ServiceImpl<AccountMapper, Account>
         // 实现 AccountService 接口，提供自定义业务逻辑
         implements AccountService {
@@ -40,6 +47,11 @@ public class AccountServiceImpl
     // 自定义的限流工具
     @Resource
     FlowUtils flowUtils;
+
+    // 我们需要encoder来加密密码,同时这个类本身需要在SecurityConfiguration类中注册,所以这个类也在SecurityConfiguration类中被引用
+    // 如果我们在SecurityConfiguration类中将这个encoder注册为bean,就会循环引用(SecurityConfiguration类创建的时候需要这个类,但是这个类创建的时候又需要PasswordEncoder)
+    @Resource
+    PasswordEncoder encoder;
 
     /**
      * 根据用户名或邮箱加载用户信息（用于 Spring Security 登录认证）
@@ -72,7 +84,7 @@ public class AccountServiceImpl
 
     /**
      * 根据用户名或邮箱查询用户信息
-     * @param text 在上面的loadUserByUsername方法调用时，传入的参数可能是用户名或邮箱,所以这里的text可能是用户名也可能是邮箱
+     * @param text 用户登录的时候传入的用于识别账号的key,因为在上面的loadUserByUsername方法调用时，传入的参数可能是用户名或邮箱,所以这里的text可能是用户名也可能是邮箱
      * @return Account 返回查询到的账号对象
      */
     public Account findAccountByNameOrEmail(String text) {
@@ -93,6 +105,15 @@ public class AccountServiceImpl
      * @param ip 发起这个发送邮件请求的ip，为了防止同一个ip短时间内多次请求
      * @return
      */
+
+    /**
+     * 整个邮件业务的逻辑是，当前端在/ask-code接口处请求时，我们会读取请求的内容，然后调用AccountServiceImpl类中的registerEmailVerifyCode方法
+     * 这个方法会首先对ip加锁，保证同一时间同一个ip只能请求一个，然后在redis中检查是否有这个ip，如果有说明这个ip在设定时间内已经请求过这个接口了，所以请求频繁
+     * 如果通过了上述检测，生成一个随机6位数验证码，将验证码，需要发送到的邮箱，邮件的类型 存储到一个map中，上述数据分别是同一个map中的一个元素，整个map是一个大元素
+     * 然后向指定的mq队列中发送这个map，在MailQueueListener中，我们监听了这个队列，一旦队列中有消息，就会从队列中读取数据，解析出上面存储的内容，调用spring mail，发送邮件
+     * 在AccountServiceImpl类中的registerEmailVerifyCode方法将内容发送到消息队列后，这个方法还会将生成的验证码暂存入redis
+     * 当用户输入验证码的时候，就可以直接从redis中比对
+     */
     @Override
     public String registerEmailVerifyCode(String type, String email, String ip) {
         //intern()方法会检查字符串池中是否已经存在当前字符串：
@@ -108,7 +129,7 @@ public class AccountServiceImpl
 
             Random random = new Random();
             int code = random.nextInt(899999) + 100000;//生成验证码
-
+            System.out.println("verification code created:"+ code);
             // 创建一个Map对象，保存验证码相关的数据，包括类型、邮箱和验证码本身，这一整个map（而不是map中的某个元素）相当于mq中的一个数据
             // map.of() 返回一个包含指定键值对的 Map，这个 Map 是 不可变的
             Map<String, Object> data = Map.of("type", type, "email", email, "code", code);
@@ -131,9 +152,78 @@ public class AccountServiceImpl
         // 生成一个限流的key，通常由常量前缀(自己定义在const类中)和IP地址拼接而成，确保唯一性
         String key = Const.VERIFY_EMAIL_LIMIT + ip;
 
-        // 调用FlowUtils中的limitOnceCheck方法，尝试对该key设置限流标记，限流时间为60秒
+        // 调用FlowUtils中的limitOnceCheck方法，将限流的key放入参数,如果方法检测到有这个key,返回false,
+        // 当上面的registerEmailVerifyCode方法调用本方法发现返回false的时候,就会因请求频繁而不进行下一步
+        // 如果没有这个key,会将这个key放入redis中,并设定过期时间60s
         return flowUtils.limitOnceCheck(key, 60);
     }
+
+
+    @Override
+    public String registerEmailAccount(EmailRegisterVO vo) {
+        // 从传入的VO对象中获取邮箱
+        String email = vo.getEmail();
+        // 从传入的VO对象中获取用户名
+        String username = vo.getUsername();
+        // 构造Redis中存储验证码的key
+        // 在我们生成验证码的同时,我们也将验证码放入了redis
+        // 其中验证码本身是redis中的value,而redis中的key是 头+email,表明redis中的这条数据是一个验证码,且这个验证码是对这个email生成的
+        String key = Const.VERIFY_EMAIL_DATA + email;
+        // 通过刚刚生成的key,从Redis中获取验证码
+        String code = stringRedisTemplate.opsForValue().get(key);
+        // 如果Redis中没有对应的验证码，提示先获取验证码
+        if (code == null) return "请先获取验证码";
+
+        // 校验用户输入的验证码是否与Redis中的一致
+        if (!code.equals(vo.getCode())) return "验证码输入错误，请重新输入";
+
+        // 校验邮箱是否已被注册
+        if (this.existsAccountByEmail(email)) return "此电子邮件已被其他用户注册";
+
+        // 校验用户名是否已被注册
+        if (this.existsAccountByUsername(username)) return "此用户名已被其他人注册，请更换一个新的用户名";
+
+        // 对用户的密码进行加密处理
+        String password = encoder.encode(vo.getPassword());
+
+
+        // 创建新用户对象并填充字段
+        // ID 为空，由数据库生成
+        Account account = new Account(null, username, password, email, "user", new Date());
+
+        // 保存用户信息到数据库
+        if (this.save(account)) {
+            // 如果保存成功，从Redis中删除已使用的验证码
+            stringRedisTemplate.delete(key);
+            return null; // 注册成功时返回 null
+        } else {
+            // 如果保存失败，返回内部错误信息
+            return "内部错误，请联系管理员";
+        }
+    }
+
+    private boolean existsAccountByEmail(String email) {
+        // 检查数据库中是否存在与给定电子邮件匹配的账户
+        // baseMapper来自ServiceImpl<AccountMapper, Account>,也就是本类所继承的类,
+        // 而extends ServiceImpl<AccountMapper, Account>说明这里的baseMapper就是AccountMapper
+        // 通过 baseMapper 操作数据库，意味着所有的 Mapper 调用逻辑都在 ServiceImpl 中封装起来，这样当换用其他 Mapper 时，ServiceImpl 的逻辑不需要变动。
+        return this.baseMapper.exists(
+                Wrappers.<Account>query().eq("email", email)
+        );
+    }
+
+    private boolean existsAccountByUsername(String username) {
+        // 检查数据库中是否存在与给定用户名匹配的账户
+        return this.baseMapper.exists(
+                // Wrappers 是 MyBatis-Plus 中提供的一个工具类，用于生成各种类型的条件构造器。
+                //query() 方法生成一个 QueryWrapper 对象，专门用来封装查询条件。
+                // 这里的 <Account> 是一个泛型，用于指定查询条件包装器的类型。表示这个 QueryWrapper 对象是针对 Account 实体类 的查询条件。
+                //如果省略 <Account>，MyBatis-Plus 也可以通过上下文推导类型，但显式声明有时更清晰。
+                Wrappers.<Account>query().eq("username", username)
+        );
+    }
+
+
 
 
 }

@@ -43,6 +43,15 @@ const router = createRouter({
 
                     // 懒加载子组件 LoginPage.vue，用户访问时动态加载，提升性能。
                     component: ()  => import('@/views/welcome/LoginPage.vue')
+                },{
+                    // 子路由路径，表示在父路径下直接访问该页面（"/"）。
+                    path: 'register',
+
+                    // 子路由名称，可用于精确跳转到登录页面。
+                    name: 'welcome-register',
+
+                    // 懒加载子组件 LoginPage.vue，用户访问时动态加载，提升性能。
+                    component: ()  => import('@/views/welcome/RegisterPage.vue')
                 }
             ]
         },

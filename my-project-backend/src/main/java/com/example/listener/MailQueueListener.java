@@ -70,7 +70,7 @@ public class MailQueueListener {
         message.setText(content);  // 设置邮件正文内容
         message.setTo(email);  // 设置收件人
         message.setFrom(username);  // 设置发件人（配置中读取的邮箱地址）
-        System.out.println("creat message");
+        System.out.println("an email has sent to user");
         return message;
     }
 }

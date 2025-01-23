@@ -114,7 +114,7 @@ function userLogin() {
 
     <div>
       <!-- 注册按钮，宽度设置为270px -->
-      <el-button @click=router.push('/register') style="width: 270px;background-color: #c493fa; border-color:#c493fa; color: #ffffff;" type="warning">
+      <el-button @click="router.push('/register')" style="width: 270px;background-color: #c493fa; border-color:#c493fa; color: #ffffff;" type="warning">
         立即注册
       </el-button>
     </div>

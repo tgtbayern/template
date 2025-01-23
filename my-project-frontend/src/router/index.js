@@ -11,6 +11,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import {unauthorized} from "@/net/index.js";
 
+
+
 // 2. 定义路由
 // 通过 createRouter 方法创建路由实例
 const router = createRouter({

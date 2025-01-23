@@ -3,6 +3,8 @@ package com.example.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.entity.dto.Account;
 import com.example.entity.vo.request.EmailRegisterVO;
+import com.example.entity.vo.response.ConfirmResetVO;
+import com.example.entity.vo.response.EmailResetVO;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
@@ -25,4 +27,8 @@ public interface AccountService extends IService<Account>, UserDetailsService {
      * @return 成功还是失败的信息
      */
     String registerEmailAccount(EmailRegisterVO vo);
+
+    String resetConfirm(ConfirmResetVO vo);
+
+    String resetEmailAccountPassword(EmailResetVO vo);
 }

@@ -95,7 +95,7 @@ function userLogin() {
         <!-- 第二列：右对齐，包含一个“忘记密码”链接 -->
         <el-col :span="12" style="text-align: right">
           <!-- el-link是Element UI的超链接组件，点击可触发跳转或其他操作 -->
-          <el-link>忘记密码？</el-link>
+          <el-link @click="router.push('/reset')">忘记密码？</el-link>
         </el-col>
       </el-row>
       </el-form>

@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.entity.dto.Account;
 import com.example.entity.vo.request.EmailRegisterVO;
+import com.example.entity.vo.response.ConfirmResetVO;
+import com.example.entity.vo.response.EmailResetVO;
 import com.example.mapper.AccountMapper;
 import com.example.service.AccountService;
 import com.example.utils.Const;
@@ -222,6 +224,73 @@ public class AccountServiceImpl
                 Wrappers.<Account>query().eq("username", username)
         );
     }
+
+    // vo是我们定义的包装类,作为前端调用api controller的接口,可以自动把前端的东西转化为vo类
+    // 当我们需要重置密码的时候,用户会先输入邮箱,然后我们发送验证码,然后用户提交邮箱,我们验证邮箱是否存在
+// 如果存在,就发送验证码到指定邮箱,然后验证邮箱和验证码是否合法
+// 如果合法就继续执行,开始真正修改密码,用户输入新密码,然后前端向后端发送用户之前输入的邮箱,验证码,和刚刚输入的密码
+// 先通过邮箱找到密码,然后set这个账户密码为用户输入的新值
+    @Override
+    public String resetEmailAccountPassword(EmailResetVO vo) {
+        // 从 VO 中获取邮箱地址
+        String email = vo.getEmail();
+
+        // 调用 resetConfirm 方法验证验证码是否正确
+        String verify = this.resetConfirm(new ConfirmResetVO(email, vo.getCode()));
+        // 如果验证码验证失败，则返回错误提示信息
+        if (verify != null) return verify;
+
+        // 如果验证码验证成功，对用户输入的密码进行加密
+        String password = encoder.encode(vo.getPassword());
+
+
+
+//        QueryWrapper<Account> queryWrapper = new QueryWrapper<>();
+//        queryWrapper.eq("email", email); // 查询 email 列等于传入的值
+//
+//        // 调用 baseMapper 提供的 selectOne 方法
+//        Account account = baseMapper.selectOne(queryWrapper);
+//        System.out.println(account);
+
+
+        // 更新数据库中对应邮箱的密码字段
+        boolean update = this.update()
+                .eq("email", email) // 匹配指定邮箱
+                .set("password", password) // 更新密码字段
+                .update(); // 执行更新操作
+
+        // 如果更新成功，删除 Redis 中与该邮箱相关的验证码缓存
+        if (update) {
+            System.out.println("update password success");
+            stringRedisTemplate.delete(Const.VERIFY_EMAIL_DATA + email);
+        }
+
+        // 返回 null 表示密码重置成功
+        return null;
+    }
+
+    // 当我们需要重置密码的时候,用户会先输入邮箱,然后我们发送验证码,然后用户提交邮箱,我们验证邮箱是否存在
+// 如果存在,就发送验证码到指定邮箱,然后验证邮箱和验证码是否合法
+// 如果合法就继续执行,开始真正修改密码,用户输入新密码,然后前端向后端发送用户之前输入的邮箱,验证码,和刚刚输入的密码
+// 先通过邮箱找到密码,然后set这个账户密码为用户输入的新值
+    @Override
+    public String resetConfirm(ConfirmResetVO vo) {
+        // 从 VO 中获取邮箱地址
+        String email = vo.getEmail();
+
+        // 从 Redis 中获取该邮箱对应的验证码
+        String code = stringRedisTemplate.opsForValue().get(Const.VERIFY_EMAIL_DATA + email);
+
+        // 如果验证码不存在，则提示用户先获取验证码
+        if (code == null) return "请先获取验证码";
+
+        // 如果验证码不匹配，返回提示信息
+        if (!code.equals(vo.getCode())) return "验证码错误，请重新输入";
+
+        // 返回 null 表示验证通过
+        return null;
+    }
+
 
 
 

@@ -2,6 +2,8 @@ package com.example.controller;
 
 import com.example.entity.RestBean;
 import com.example.entity.vo.request.EmailRegisterVO;
+import com.example.entity.vo.response.ConfirmResetVO;
+import com.example.entity.vo.response.EmailResetVO;
 import com.example.service.AccountService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,5 +44,34 @@ public class AuthorizeController {
         String result = service.registerEmailAccount(vo);
         return result == null ? RestBean.success() : RestBean.fail(400, result);
     }
+
+    /**
+     * 处理确认重置请求
+     *
+     * @param vo 包含用户的邮箱和验证码的请求体
+     * @return 成功时返回 RestBean.success()，失败时返回包含错误信息的 RestBean.failure()
+     */
+    @PostMapping("/reset-confirm")
+    public RestBean<Void> resetConfirm(@RequestBody @Valid ConfirmResetVO vo) {
+        // 调用服务层方法进行重置确认处理
+        String message = service.resetConfirm(vo);
+        // 如果 message 为 null，表示操作成功，否则返回包含错误信息的失败结果
+        return message == null ? RestBean.success() : RestBean.fail(400, message);
+    }
+
+    /**
+     * 处理重置密码请求
+     *
+     * @param vo 包含用户的邮箱和新密码的请求体
+     * @return 成功时返回 RestBean.success()，失败时返回包含错误信息的 RestBean.failure()
+     */
+    @PostMapping("/reset-password")
+    public RestBean<Void> resetConfirm(@RequestBody @Valid EmailResetVO vo) {
+        // 调用服务层方法进行密码重置处理
+        String message = service.resetEmailAccountPassword(vo);
+        // 如果 message 为 null，表示操作成功，否则返回包含错误信息的失败结果
+        return message == null ? RestBean.success() : RestBean.fail(400, message);
+    }
+
 }
 

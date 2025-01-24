@@ -13,7 +13,7 @@ public record RestBean<T>(int code, T data, String message) {
     // success 方法接受一个参数 data，表示成功响应中的数据
     public static <T> RestBean<T> success(T data){
         // 返回一个 RestBean 实例，状态码为 200，表示成功，消息为 "success"
-        System.out.println("RestBean: success! "+data);
+        //System.out.println("RestBean: success! "+data);
         return new RestBean<>(200, data, "success");
     }
 
@@ -32,13 +32,13 @@ public record RestBean<T>(int code, T data, String message) {
 
     // 未认证的时候都是401错误
     public static <T> RestBean<T> unauthorized(String message){
-        System.out.println("RestBean: unauthorized! ");
+        //System.out.println("RestBean: unauthorized! ");
         return fail(401,message);
     }
 
     // 登录了但是无权限（比如普通用户访问管理员页面）的时候都是403错误
     public static <T> RestBean<T> forbidden(String message){
-        System.out.println("RestBean: forbidden! ");
+        //System.out.println("RestBean: forbidden! ");
         return fail(403,message);
     }
 

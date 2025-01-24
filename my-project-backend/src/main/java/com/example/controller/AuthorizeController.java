@@ -21,6 +21,9 @@ public class AuthorizeController {
     @Resource // 自动注入 AccountService 类的实例，提供账户相关的业务逻辑服务
     AccountService service;
 
+    /**
+     * 请求发送邮件的时候调用的接口,可以发送注册邮件,也可以发送重置密码邮件
+     */
     @GetMapping("/ask-code") // 映射 GET 请求到 "/api/auth/ask-code" 接口
     public RestBean<Void> askVerifyCode(
             @RequestParam @Email String email, // 从请求参数中获取 email 参数，必须符合email的格式

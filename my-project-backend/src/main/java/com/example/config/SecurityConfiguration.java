@@ -155,7 +155,7 @@ public class SecurityConfiguration {
                                         AuthenticationException exception) throws IOException, ServletException {
         response.setContentType("application/json;charset=utf-8");
         response.getWriter().write(RestBean.unauthorized(exception.getMessage()).asJsonString());
-        System.out.println("Request URL: " + request.getRequestURI()+" in onAuthenticationFailure");
+        //System.out.println("Request URL: " + request.getRequestURI()+" in onAuthenticationFailure");
     }
 
     /**
@@ -207,7 +207,7 @@ public class SecurityConfiguration {
                     success方法会将这个参数————vo，向restBean实体类的data字段注入的
          */
         response.getWriter().write(RestBean.success(vo).asJsonString());
-        System.out.println("Request URL: " + request.getRequestURI()+" in onAuthenticationSuccess");
+        //System.out.println("Request URL: " + request.getRequestURI()+" in onAuthenticationSuccess");
     }
 
     /**

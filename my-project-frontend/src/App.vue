@@ -5,7 +5,16 @@
 <!--•	使用 <router-view /> 动态加载路由对应的子组件。-->
 
 <script setup>
+import { useDark, useToggle } from '@vueuse/core';
 
+useDark({
+  selector: 'html',
+  attribute: 'class',
+  valueDark: 'dark',
+  valueLight: 'light'
+});
+
+useToggle(dark);
 </script>
 
 <template>

@@ -60,6 +60,6 @@
 .right-card {
   width: 400px; /* 固定宽度 */
   z-index: 1; /* 提高层级，防止被其他元素遮盖 */
-  background-color: white; /* 设置白色背景 */
+  background-color: var(--el-bg-color); /* 设置element ui自带的背景颜色,当变成深色模式的时候,会自动切换颜色 */
 }
 </style>
